@@ -1,8 +1,11 @@
+package src;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.Socket;
 
 public class Connection extends Thread {
@@ -21,31 +24,13 @@ public class Connection extends Thread {
 	}
 
 	public void send(String msg) {
-		BufferedReader br = null;
-		// TODO: send message to output pipe
 		try {
-			String input = br.readLine();
+			streamOut.writeUTF(msg);
+			streamOut.flush();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		try {
-			streamOut.writeBytes(msg);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		try {
-			streamOut.writeBytes("\n.\n");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		try {
-			streamOut.writeBytes("QUIT");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("err: " + e.getMessage());
+			server.remove(ID);
+			stop();
 		}
 	}
 
@@ -54,22 +39,35 @@ public class Connection extends Thread {
 	}
 
 	public void run() {
-		// TODO: infinite loop that takes the console input and calls server.handle
-		while(true){
-			server.handle(ID,String);
-			System.out.print("Enter String\n");
+		// TODO: infinite loop that takes the console input and calls
+		// server.handle
+		System.out.println("Server Thread " + ID + " running.");
+		while (true) {
+			try {
+				server.handle(ID, streamIn.readUTF());
+			} catch (IOException ioe) {
+				System.out.println(ID + " ERROR reading: " + ioe.getMessage());
+				server.remove(ID);
+				stop();
+			}
 		}
 	}
 
 	public void open() throws IOException {
 		// TODO: Start input/output pipes
-		streamOut = new DataOutputStream(this.socket.getOutputStream());
-		streamIn = new DataInputStream(this.socket.getInputStream());
+		streamIn = new DataInputStream(new BufferedInputStream(
+				socket.getInputStream()));
+		streamOut = new DataOutputStream(new BufferedOutputStream(
+				socket.getOutputStream()));
 	}
 
 	public void close() throws IOException {
 		// TODO: close soket and pipes
-		streamOut.close();
-		streamIn.close();
+		if (socket != null)
+			socket.close();
+		if (streamIn != null)
+			streamIn.close();
+		if (streamOut != null)
+			streamOut.close();
 	}
 }
