@@ -24,6 +24,7 @@ public class Connection extends Thread {
 	}
 
 	public void send(String msg) {
+		// TODO: send message to output pipe
 		try {
 			streamOut.writeUTF(msg);
 			streamOut.flush();
